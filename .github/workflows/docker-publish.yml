@@ -1,0 +1,55 @@
+name: Docker
+
+# This workflow is triggered on schedule, push to 'main' branch, and pull requests to 'main'.
+# It uses third-party actions which are governed by their own terms of service and privacy policy.
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ 'v*.*.*' ]     # Triggers on version tags like v1.0.0
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  REGISTRY: ghcr.io         # Default registry is GitHub Container Registry
+  IMAGE_NAME: ${{ github.repository }}  # Image name follows the format <account>/<repo>
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # The job runs on the latest Ubuntu runner
+    permissions:
+      contents: read
+      packages: write
+      id-token: write       # Required for identity verification with sigstore/fulcio
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4   # Checks out the repository code
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v3  # Sets up Docker Buildx for building images
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3  # Logs into the specified Docker registry
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5  # Extracts metadata for Docker image
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v5  # Builds and pushes Docker image
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
