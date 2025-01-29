@@ -9,7 +9,7 @@ import warnings
 
 from ruamel.yaml import YAML
 
-DEFAULT_ROOT_DESTINATION = "./icloud"
+DEFAULT_ROOT_DESTINATION = "/icloud"
 DEFAULT_DRIVE_DESTINATION = "drive"
 DEFAULT_PHOTOS_DESTINATION = "photos"
 DEFAULT_RETRY_LOGIN_INTERVAL_SEC = 600  # 10 minutes
